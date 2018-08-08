@@ -51,6 +51,12 @@ func updateUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, users[id])
 }
 
+func deleteUser(c echo.Context) error {
+	id, _ := strconv.Atoi(c.Param("id"))
+	delete(users, id)
+	return c.NoContent(http.StatusNoContent)
+}
+
 func main() {
 	e := echo.New()
 
@@ -62,6 +68,7 @@ func main() {
 	e.POST("/users", createUser)
 	e.GET("/users/:id", getUser)
 	e.PUT("/users/:id", updateUser)
+	e.DELETE("/users/:id", deleteUser)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":1323"))
