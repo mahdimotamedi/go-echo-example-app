@@ -2,51 +2,56 @@ package main
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 )
 
-func main() {
-	e := echo.New()
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
-	})
+type (
+	user struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+	}
+)
 
-	e.POST("/users", saveUser)
-	e.GET("/users/:id", getUser)
-	e.PUT("/users/:id", updateUser)
-	e.DELETE("/users/:id", deleteUser)
+var (
+	users = map[int]*user{}
+	seq   = 1
+)
 
-	e.Logger.Fatal(e.Start(":1323"))
+//----------
+// Handlers
+//----------
+
+func createUser(c echo.Context) error {
+	u := &user{
+		ID: seq,
+	}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+	users[u.ID] = u
+	seq++
+	return c.JSON(http.StatusCreated, u)
 }
 
 func getUser(c echo.Context) error {
-	// User ID from path `users/:id`
-	id := c.Param("id")
-
-	return c.String(http.StatusOK, id)
+	id, _ := strconv.Atoi(c.Param("id"))
+	return c.JSON(http.StatusOK, users[id])
 }
 
-func saveUser(c echo.Context) error {
-	// Get name and email
-	name := c.FormValue("name")
-	email := c.FormValue("email")
+func main() {
+	e := echo.New()
 
-	return c.String(http.StatusOK, "name:"+name+", email:"+email)
-}
+	// Middleware
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
 
-func updateUser(c echo.Context) error {
-	// Get name and email
-	id := c.FormValue("id")
-	name := c.FormValue("name")
-	email := c.FormValue("email")
+	// Routes
+	e.POST("/users", createUser)
+	e.GET("/users/:id", getUser)
 
-	return c.String(http.StatusOK, "name:"+name+", email:"+email+", id:"+id)
-}
-
-func deleteUser(c echo.Context) error {
-	// Get name and email
-	id := c.Param("id")
-
-	return c.String(http.StatusOK, "id:"+id)
+	// Start server
+	e.Logger.Fatal(e.Start(":1323"))
 }
