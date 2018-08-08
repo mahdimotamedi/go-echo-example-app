@@ -41,6 +41,16 @@ func getUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, users[id])
 }
 
+func updateUser(c echo.Context) error {
+	u := new(user)
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+	id, _ := strconv.Atoi(c.Param("id"))
+	users[id].Name = u.Name
+	return c.JSON(http.StatusOK, users[id])
+}
+
 func main() {
 	e := echo.New()
 
@@ -51,6 +61,7 @@ func main() {
 	// Routes
 	e.POST("/users", createUser)
 	e.GET("/users/:id", getUser)
+	e.PUT("/users/:id", updateUser)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":1323"))
